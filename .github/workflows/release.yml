@@ -1,0 +1,55 @@
+name: Maven Build and Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '8'
+
+      - name: Build with Maven
+        run: mvn clean package
+
+      - name: Check Latest Release
+        id: check_latest_release
+        run: |
+          LATEST_RELEASE=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r .id)
+          echo "::set-output name=latest_release::$LATEST_RELEASE"
+
+      - name: Delete Previous Release
+        if: steps.check_latest_release.outputs.latest_release != 'null'
+        run: |
+          # Get the latest release ID
+          RELEASE_ID=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r .id)
+          
+          # Delete the release
+          curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/${RELEASE_ID}"
+
+      - name: Set up Git
+        run: |
+          git config user.email "yelochick@outlook.com"
+          git config user.name "yelochick"
+
+      - name: Create Tag
+        run: git tag -a v${{ github.run_number }} -m "release"
+
+      - name: Push Tag
+        run: git push origin v${{ github.run_number }}
+
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "target/activation.jar"
+          tag: release
