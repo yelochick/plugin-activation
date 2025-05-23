@@ -2,6 +2,7 @@ package com.yelochick;
 
 import com.janetfilter.core.plugin.MyTransformer;
 import com.janetfilter.core.plugin.PluginEntry;
+import com.yelochick.coolrequest.VipApiTransformer;
 
 import java.util.Collections;
 import java.util.List;
@@ -19,6 +20,8 @@ public class ActivationPlugin implements PluginEntry {
 
     @Override
     public List<MyTransformer> getTransformers() {
-        return Collections.singletonList(new SmartInputTransformer());
+        return Collections.singletonList(
+                new VipApiTransformer()
+        );
     }
 }
